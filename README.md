@@ -1,209 +1,208 @@
-# HP ScanJet Pro N4000 snw1: Admin-Passwort über UART wiederherstellen
+# HP ScanJet Pro N4000 snw1: Recover the Admin Password via UART
 
-Diese Anleitung beschreibt, wie ich nach einer fehlerhaften Passwortänderung wieder Zugriff auf den **HP Embedded Web Server (EWS)** meines ScanJet Pro N4000 snw1 bekommen habe. Sie hilft auch bei einem vergessenen EWS-Admin-Passwort, sofern sich das Gerät wie das hier getestete Exemplar verhält.
+This guide explains how I regained access to the **HP Embedded Web Server (EWS)** on my ScanJet Pro N4000 snw1 after a password change went wrong. It can also help with a forgotten EWS admin password, provided the device behaves like the unit tested here.
 
-Der Weg: Gehäuse öffnen, die **3,3-V-UART-Konsole mit 115200 Baud** anschließen, das tatsächlich gespeicherte Passwort lokal auslesen und damit im Webinterface ein neues Passwort setzen. Beim getesteten Gerät war dafür weder ein Werksreset noch ein Firmware-Flash nötig; die vorhandenen Einstellungen konnten erhalten bleiben.
+The procedure: open the scanner, connect to its **3.3 V UART console at 115200 baud**, read the password actually stored on the device, and use it to set a new password in the web interface. On the tested unit, this required neither a factory reset nor a firmware flash, and the existing settings could be preserved.
 
-> **Geltungsbereich:** Eigener Erfahrungsbericht an einem einzelnen Gerät mit **Main-Board-Firmware v0.95**. Andere Firmwarestände und Platinenrevisionen können sich anders verhalten. Diese Anleitung ist kein offizielles HP-Serviceverfahren. Verwende sie nur an einem eigenen Gerät oder mit Erlaubnis des Eigentümers.
+> **Scope:** A firsthand account based on a single device running **main-board firmware v0.95**. Other firmware versions and board revisions may behave differently. This is not an official HP service procedure. Use it only on your own device or with the owner's permission.
 
-## Mein Fall: Das richtige Passwort war plötzlich „falsch“
+## My case: The correct password suddenly became “incorrect”
 
-Ich hatte auf dem Scanner mit Firmware v0.95 folgendes Admin-Passwort gesetzt:
+I had set the following admin password on the scanner running firmware v0.95:
 
-| Wert | Passwort | Länge |
+| Value | Password | Length |
 |---|---|---:|
-| Von mir eingegeben | `Lw-7QgpNAx47rovftTttGffEhIOhs3d` | 31 Zeichen |
-| Im Gerät gespeichert | `7QgpNAx47rovftTt` | 16 Zeichen |
+| What I entered | `Lw-7QgpNAx47rovftTttGffEhIOhs3d` | 31 characters |
+| What the device stored | `7QgpNAx47rovftTt` | 16 characters |
 
-Das gespeicherte Passwort war also nicht einfach das Original und auch nicht dessen erste 16 Zeichen: Es entsprach **Zeichen 4 bis 19** des eingegebenen Werts. Das Präfix `Lw-` und der hintere Teil fehlten. Mit dem ursprünglichen Passwort wurde der Login abgelehnt.
+The stored password was neither the original value nor its first 16 characters. It matched **characters 4 through 19** of the value I entered. The `Lw-` prefix and the remaining suffix were missing. Login with the original password was rejected.
 
-Ich kontaktierte HP. Der Support eröffnete ein Ticket und ging mit mir verschiedene Abläufe durch. Am Ende wurde vermutet, dass ich das Gerät „gebrickt“ hätte. Ein funktionierender Weg zur Wiederherstellung des Zugangs ergab sich dabei nicht.
+I contacted HP. Support opened a ticket and worked through several procedures with me. In the end, they suspected that I had “bricked” the device. Those attempts did not produce a working way to restore access.
 
-Nach dem Öffnen des Scanners fand ich den UART-Anschluss. Die Verbindung führte direkt zu einer Linux-Root-Shell, ohne vorherige Anmeldung. Dort konnte ich das gespeicherte EWS-Passwort auslesen und den Unterschied zum eingegebenen Wert erkennen. Der Scanner bootete weiterhin; in meinem Fall war der verlorene Admin-Zugang das Problem.
+After opening the scanner, I found its UART connection. Connecting to it gave me a Linux root shell directly, without having to log in. From there, I could read the stored EWS password and see how it differed from the value I had entered. The scanner still booted; in my case, the problem was the loss of admin access.
 
-**Aus dieser einzelnen Beobachtung folgt kein allgemeiner Kürzungsalgorithmus.** Insbesondere ist nicht nachgewiesen, dass jedes lange Passwort unter v0.95 an derselben Stelle abgeschnitten wird oder dass das führende Sonderzeichen die Ursache war.
+**This single observation does not establish a general truncation algorithm.** In particular, it does not prove that every long password is truncated at the same position under v0.95, or that the special character near the beginning caused the problem.
 
-Die beiden oben gezeigten Passwortwerte sind absichtlich Teil dieses öffentlichen Fallberichts. Verwende sie nicht als neues Passwort.
+The two password values shown above are intentionally included in this public case report. Do not use them as a new password.
 
-## Vor dem Öffnen: Ein einfacher Versuch
+## Before opening the scanner: A simple thing to try
 
-Wenn du das ursprünglich gesetzte lange Passwort noch kennst, kannst du zunächst dessen **erste 16 Zeichen** im EWS ausprobieren. Ein Nutzer konnte den Zugang unter Firmware **0.51** auf diese Weise wiederherstellen. Das beschreibt dieser [Erfahrungsbericht in der HP Support Community](https://h30434.www3.hp.com/t5/Scanning-Faxing-Copying/ScanJet-Pro-N4000-snw1-password-reset/td-p/8030034).
+If you still know the long password you originally set, you can first try its **first 16 characters** in EWS. A user restored access this way under firmware **0.51**, as described in this [firsthand report in the HP Support Community](https://h30434.www3.hp.com/t5/Scanning-Faxing-Copying/ScanJet-Pro-N4000-snw1-password-reset/td-p/8030034).
 
-Das ist keine garantierte Lösung: In meinem Fall unter v0.95 waren gerade **nicht** die ersten 16 Zeichen gespeichert. Bleibt die Anmeldung erfolglos oder ist das ursprüngliche Passwort unbekannt, folgt der UART-Weg.
+This is not a guaranteed solution: my device running v0.95 had **not** stored the first 16 characters. If login still fails, or the original password is unknown, continue with the UART procedure.
 
-## Was du brauchst
+## What you need
 
-- HP ScanJet Pro **N4000 snw1**; mein Gerät hat die Produktnummer **6FW08A**.
-- Einen USB-UART-Adapter mit **3,3-V-Signalpegeln**. Ich verwendete einen **DSD TECH SH-U09B mit CP2102**.
-- Einen Computer mit einem seriellen Terminal; die folgenden Beispiele verwenden macOS und `screen`.
-- Multimeter, geeignete Leitungen und Werkzeug zum Öffnen des Geräts. Die fotografierten Leitungen sind angelötet; sauberes Löten oder eine sichere Kontaktierung ist erforderlich.
-- Empfohlen: ein **1-kΩ-Widerstand in der Leitung vom Adapter-TXD zum Scanner-RX**, um den Strom bei einer Fehlzuordnung zu begrenzen. Dieser zusätzliche Widerstand ist auf den Fotos nicht dargestellt.
+- An HP ScanJet Pro **N4000 snw1**; my unit has product number **6FW08A**.
+- A USB-UART adapter with **3.3 V signal levels**. I used a **DSD TECH SH-U09B with a CP2102**.
+- A computer with a serial terminal; the examples below use macOS and `screen`.
+- A multimeter, suitable wires, and tools to open the device. The wires in the photos are soldered to the board; clean soldering or another secure connection is required.
+- Recommended: a **1 kΩ resistor in series between adapter TXD and scanner RX**, to limit current if a pin is misidentified. This additional resistor is not shown in the photos.
 
-**Elektrisch wichtig:** Verwende TTL-UART mit 3,3 V, keinen klassischen RS-232-Pegel und kein 5-V-TX-Signal. **3V3, 5V0 und sonstige Versorgungspins des Adapters bleiben unverbunden.** Der Scanner wird über sein eigenes Netzteil versorgt. Ein 3V3-Anschluss am Adapter ist für sich allein kein Nachweis des TXD-Signalpegels; miss TXD gegen Adapter-GND im Ruhezustand, bevor du ihn mit dem Scanner verbindest.
+**Electrical requirements:** Use 3.3 V TTL UART, not conventional RS-232 voltage levels or a 5 V TX signal. **Leave the adapter's 3V3, 5V0, and any other power pins disconnected.** The scanner uses its own power supply. A pin labelled 3V3 on the adapter does not, by itself, prove the voltage of its TXD signal; measure idle TXD against adapter GND before connecting it to the scanner.
 
-Öffne und löte nur bei getrenntem Netzteil und getrenntem USB-Adapter. Arbeite mit ESD-Schutz und vermeide lose Drähte, Lötbrücken oder Kontakt zum Metallgehäuse. Bei der späteren Messung liegt die Platine offen und ist versorgt; berühre nur die vorgesehenen Niederspannungsanschlüsse. Falsche Verdrahtung kann das Gerät oder den Adapter beschädigen.
+Open the device and solder only with both the scanner power supply and USB adapter disconnected. Use ESD protection and avoid loose wires, solder bridges, or contact with the metal chassis. During the later measurements, the board will be exposed and powered; touch only the intended low-voltage connections. Incorrect wiring can damage the scanner or adapter.
 
-## 1. UART-Anschluss auf der Hauptplatine finden
+## 1. Find the UART connection on the main board
 
-Das Übersichtsbild zeigt die **Lötseite der Hauptplatine**. Der verwendete Anschluss ist rot umkreist. Die Bezeichnung **J8** wurde anhand der Fotos der gegenüberliegenden Bestückungsseite zugeordnet; auf den beiden hier eingebundenen Bildern ist der Aufdruck nicht lesbar.
+The overview photo shows the **solder side of the main board**. The connection used here is circled in red. The designation **J8** was identified from photos of the opposite, component side; the label is not legible in the two photos included here.
 
-![Übersicht der Lötseite: Der rot umkreiste Anschluss ist die verwendete UART-Viererreihe.](assets/frontpcb.jpg)
+![Overview of the solder side: the four-pad UART connection used here is circled in red.](assets/frontpcb.jpg)
 
-Im **Detailfoto unten ist die untere Viererreihe gemeint**, an der die drei Drähte angeschlossen sind. Die darüber liegende Dreierreihe gehört nicht zu dieser Verbindung. Das Detailfoto ist gegenüber dem Übersichtsbild um etwa 180° gedreht.
+In the **close-up below, use the lower row of four pads**, where the three wires are attached. The row of three pads above it is not part of this connection. The close-up is rotated by approximately 180° relative to the overview photo.
 
-![Detail der UART-Viererreihe: links unbenutzt, dann Scanner-RX blau, Scanner-TX weiß und GND schwarz.](assets/pins.jpg)
+![Close-up of the four UART pads: unused pad on the left, then scanner RX in blue, scanner TX in white, and GND in black.](assets/pins.jpg)
 
-**RX und TX sind aus Sicht des Scanners beschriftet.** Die Farben beziehen sich nur auf meine angelöteten Drähte, nicht auf eine genormte Kabelfarbe des USB-Adapters.
+**RX and TX are labelled from the scanner's perspective.** The colours refer only to my soldered wires, not to any standard USB-adapter wire colours.
 
-| Anschluss | Funktion am Scanner | Draht im Foto | Verbindung am USB-UART-Adapter |
+| Connection | Function on the scanner | Wire in the photo | USB-UART adapter connection |
 |---|---|---|---|
-| A | GND | Schwarz | GND |
-| B | TX: Scanner sendet | Weiß | RXD: Adapter empfängt |
-| C | RX: Scanner empfängt | Blau | TXD: Adapter sendet, vorzugsweise über 1 kΩ |
-| D | Unbekannt | Nicht verdrahtet | Nicht anschließen |
+| A | GND | Black | GND |
+| B | TX: scanner transmits | White | RXD: adapter receives |
+| C | RX: scanner receives | Blue | TXD: adapter transmits, preferably through 1 kΩ |
+| D | Unknown | Not wired | Do not connect |
 
-Die Blickrichtung macht einen Unterschied:
+The viewing direction matters:
 
-- **Übersicht `frontpcb.jpg`, links nach rechts:** A/GND, B/TX, C/RX, D/unbekannt.
-- **Detail `pins.jpg`, untere Reihe links nach rechts:** D/unbekannt, C/RX, B/TX, A/GND.
+- **Overview, `frontpcb.jpg`, left to right:** A/GND, B/TX, C/RX, D/unknown.
+- **Close-up, `pins.jpg`, lower row, left to right:** D/unknown, C/RX, B/TX, A/GND.
 
-GND wurde elektrisch bestimmt; TX und RX wurden durch lesbare Bootmeldungen und eine funktionierende Shell-Verbindung bestätigt. Eine gemessene Spannung von ungefähr 3,3 V allein unterscheidet keinen RX-Eingang von einem Versorgungspin oder einem anderen Ausgang. D bleibt deshalb unverbunden.
+GND was identified electrically; TX and RX were confirmed by readable boot messages and a working shell connection. A measured voltage of approximately 3.3 V alone does not distinguish an RX input from a power pin or another output. Leave D disconnected.
 
-## 2. Adapter verbinden und Terminal öffnen
+## 2. Connect the adapter and open a terminal
 
-Bereite die Verdrahtung bei stromlosem Scanner und vom USB getrenntem Adapter vor. Nimm anschließend zuerst den Scanner in Betrieb und verbinde danach den Adapter mit dem Computer. So treibt der Adapter-TXD kein Signal in den noch unversorgten Scanner.
+Prepare the wiring with the scanner unpowered and the adapter disconnected from USB. Then power the scanner before connecting the adapter to the computer. This prevents adapter TXD from driving a signal into an unpowered scanner.
 
-| Einstellung | Wert |
+| Setting | Value |
 |---|---|
-| Signalpegel | 3,3 V |
-| Baudrate | 115200 |
-| Datenbits | 8 |
-| Parität | Keine |
-| Stoppbits | 1 |
-| Flusskontrolle | Keine, weder RTS/CTS noch XON/XOFF |
+| Signal level | 3.3 V |
+| Baud rate | 115200 |
+| Data bits | 8 |
+| Parity | None |
+| Stop bits | 1 |
+| Flow control | None: neither RTS/CTS nor XON/XOFF |
 
-Unter macOS kannst du die verfügbaren Anschlüsse anzeigen:
+On macOS, list the available ports:
 
 ```sh
 ls /dev/cu.*
 ```
 
-Mein Adapter erschien als `/dev/cu.usbserial-0001`. Ersetze diesen Namen durch den Anschluss deines Adapters:
+My adapter appeared as `/dev/cu.usbserial-0001`. Replace this name with your adapter's port:
 
 ```sh
 screen -fn /dev/cu.usbserial-0001 115200
 ```
 
-`-fn` schaltet bei `screen` die Flusskontrolle aus. Für diese Anleitung wird die Terminalausgabe nicht automatisch mitgeschrieben, da beim späteren Auslesen Passwörter sichtbar werden.
+`-fn` disables flow control in `screen`. This guide does not enable automatic terminal logging because passwords will become visible during the later inspection.
 
-Unter Linux kann der Anschluss beispielsweise `/dev/ttyUSB0` heißen. In einem anderen Terminalprogramm stellst du dieselben Parameter aus der Tabelle ein. Öffne den Anschluss immer nur in einem Programm gleichzeitig.
+On Linux, the port might be named `/dev/ttyUSB0`. If you use a different terminal program, apply the same settings from the table. Open the port in only one program at a time.
 
-Drücke nach dem Hochfahren **Enter**. Im getesteten Firmwarestand erschien direkt:
+After the scanner has booted, press **Enter**. The tested firmware provided this prompt directly:
 
 ```text
 / #
 ```
 
-Prüfe die Rechte:
+Check your privileges:
 
 ```sh
 id
 ```
 
-Die Ausgabe meines Geräts war:
+My device returned:
 
 ```text
 uid=0(root) gid=0(root)
 ```
 
-Falls du nur Ausgaben lesen kannst, kontrolliere insbesondere die Leitung Adapter-TXD → Scanner-RX. Falls Zeichen unlesbar sind, prüfe Signalpegel, Masse und Terminalparameter. Ein echter Login-Prompt statt einer Root-Shell wäre ein Unterschied zum getesteten Gerät; dafür ist hier kein Standardpasswort belegt.
+If you can only read output, check the adapter-TXD → scanner-RX connection in particular. If the characters are unreadable, check signal levels, ground, and terminal settings. An actual login prompt instead of a root shell would differ from the tested unit; no default password for that situation has been established here.
 
-Zum Beenden von `screen`: **Strg+A**, Tasten loslassen, dann **K**, anschließend mit **Y** bestätigen.
+To exit `screen`: press **Ctrl+A**, release the keys, then press **K** and confirm with **Y**.
 
-Für einen Bootmitschnitt kannst du den Adapter zunächst nur mit GND und seinem RXD anschließen und den Empfang vor dem Einschalten starten. Die TXD-Leitung verbindest du erst, wenn der Scanner versorgt ist. **Vor dem Ausschalten des Scanners TXD wieder trennen**, wenn der Adapter weiter per USB versorgt bleibt; sonst ist Rückspeisung über das Signal möglich.
+To capture boot messages, you can initially connect the adapter using only GND and its RXD pin, and start receiving before switching the scanner on. Connect the TXD wire only once the scanner is powered. **Disconnect TXD before switching the scanner off** if the adapter remains powered by USB; otherwise, the signal can back-power the scanner.
 
-## 3. Tatsächlich gespeichertes EWS-Passwort lokal auslesen
+## 3. Read the EWS password actually stored on the device
 
-Das Passwort lag bei meinem Gerät **im Klartext** in:
+On my unit, the password was stored **in plaintext** in:
 
 ```text
 /datafs/H1_nvram.bin
 ```
 
-In meinen Untersuchungsnotizen ist es dem NVRAM-Feld **`sNetSetting.szEWSPass`** zugeordnet. Dieser Feldname ist eine technische Zuordnung aus der Untersuchung, kein Dateipfad und kein hier dokumentierter Schreibbefehl.
+My investigation notes identify it as the NVRAM field **`sNetSetting.szEWSPass`**. This field name is a technical identification from the investigation, not a file path or a write command documented in this guide.
 
-Prüfe zuerst, ob die Datei vorhanden und das Datenverzeichnis eingehängt ist:
+First check that the file exists and the data directory is mounted:
 
 ```sh
 ls -l /datafs/H1_nvram.bin
 mount | grep /datafs
 ```
 
-Lies die druckbaren Zeichenfolgen der Datei:
+Read the printable strings in the file:
 
 ```sh
 strings -a -t x /datafs/H1_nvram.bin
 ```
 
-`-t x` zeigt zusätzlich die Position der Zeichenfolge als hexadezimalen Dateioffset. Falls die auf deinem Gerät vorhandene `strings`-Version diese Option nicht unterstützt, genügt zur Ansicht:
+`-t x` also displays each string's position as a hexadecimal file offset. If the version of `strings` on your device does not support that option, use:
 
 ```sh
 strings /datafs/H1_nvram.bin
 ```
 
-**Prüfe die Ausgabe lokal.** Sie kann neben dem EWS-Passwort weitere vertrauliche Konfigurationswerte enthalten. Lade weder die vollständige Ausgabe noch die NVRAM-Datei, Terminalmitschnitte oder ungeschwärzte Screenshots in ein öffentliches Issue hoch.
+**Inspect the output locally.** It may contain other confidential configuration values as well as the EWS password. Do not upload the complete output, the NVRAM file, terminal captures, or unredacted screenshots to a public issue.
 
-Im untersuchten Fall war der Passwortstring im Umfeld von Modell- und Hostnamen zu finden. Wenn du dein ursprünglich gesetztes Passwort noch kennst, lässt sich ein gespeichertes Fragment damit vergleichen. Bei einem völlig unbekannten Passwort sind andere druckbare Werte kein sicherer Nachweis: Ordne den Kandidaten anhand des Dateikontexts zu und prüfe ihn im EWS.
+In the investigated case, the password string appeared near the model and host name strings. If you still know the password you originally set, you can compare it with a stored fragment. If the password is completely unknown, other printable values are not sufficient proof: identify a candidate from the file context and test it in EWS.
 
-In meinen Notizen liegt der betreffende Wert bei Offset **`0x158`**. Das ist eine Beobachtung an diesem Gerät, **kein universeller Offset**. Die oben gezeigten Befehle lesen die Datei nur; sie verändern keine NVRAM-Daten.
+My notes place the relevant value at offset **`0x158`**. This is an observation from this device, **not a universal offset**. The commands above only read the file; they do not modify NVRAM data.
 
-## 4. Im Webinterface anmelden und Passwort neu setzen
+## 4. Log in to the web interface and set a new password
 
-1. Ermittle die aktuelle IP-Adresse über das Bedienpanel oder die Geräteliste deines Routers und öffne das EWS im Browser, beispielsweise `https://<IP-des-Scanners>`.
-2. Wähle die Administrator-Anmeldung und verwende als Passwort **genau den im Gerät gefundenen Wert**. In meinem Fall war das `7QgpNAx47rovftTt`.
-3. Öffne die Einstellung für das Administratorpasswort im Sicherheitsbereich des EWS. Der genaue Menütext kann je nach Sprache und Firmware variieren; verwechsle das Admin-Passwort nicht mit Scan-PINs, SMTP-, WLAN- oder Linux-Root-Passwörtern.
-4. Setze vorläufig ein anderes, zufälliges Passwort mit **höchstens 16 ASCII-Zeichen**. Ein zufälliger Wert aus Buchstaben und Ziffern vermeidet bei diesem Firmwarestand zusätzliche Unsicherheit durch Sonderzeichen oder Mehrbyte-Zeichen. Das ist ein vorsichtiger Workaround, kein Nachweis, dass alle anderen Zeichen fehlerhaft verarbeitet werden.
-5. Melde dich ab und in einer neuen Browser-Sitzung mit dem neuen Passwort wieder an. Eine noch offene, bereits angemeldete Sitzung ist kein Test des neuen Passworts.
-6. Prüfe bei Gelegenheit auch die Anmeldung nach einem regulären Neustart. Erst damit ist bestätigt, dass die Änderung auf deinem Gerät dauerhaft gespeichert wurde.
+1. Find the current IP address on the control panel or in your router's device list, then open EWS in a browser, for example at `https://<scanner-IP>`.
+2. Choose the administrator login and enter **exactly the password found on the device**. In my case, this was `7QgpNAx47rovftTt`.
+3. Open the administrator-password setting in the EWS security section. The exact menu label can vary by language and firmware; do not confuse the admin password with scan PINs, SMTP, Wi-Fi, or Linux root passwords.
+4. As a workaround, set a different random password with **no more than 16 ASCII characters**. A random value containing letters and digits avoids additional uncertainty about special characters or multibyte characters in this firmware version. This is a cautious workaround, not proof that all other characters are processed incorrectly.
+5. Log out, then log in with the new password in a fresh browser session. An existing authenticated session does not test the new password.
+6. Also check login after a normal restart when convenient. Only then have you confirmed that the change is stored persistently on your device.
 
-In meiner Untersuchung funktionierte ein anschließend gesetztes Passwort mit acht Zeichen. Daraus folgt keine Empfehlung für kurze Passwörter: Wähle innerhalb der hier verwendeten Begrenzung einen möglichst langen, zufälligen Wert und halte den EWS-Zugang auf dein vertrauenswürdiges Netzwerk beschränkt.
+An eight-character password set during my investigation worked. This is not a recommendation to use short passwords: choose the longest random value you can within the limit used here, and restrict EWS access to your trusted network.
 
-Ein Werksreset ist für diesen Weg nicht erforderlich. Er wäre eine zusätzliche Maßnahme und kann Netzwerk- und Scan-Einstellungen entfernen. **Das Linux-Kommando `passwd root` ist nicht der in diesem Fall verwendete Weg zur Änderung des EWS-Admin-Passworts.**
+A factory reset is not required for this procedure. It would be an additional action and may remove network and scan settings. **The Linux command `passwd root` is not the method used in this case to change the EWS admin password.**
 
-## Technische Beobachtungen und Grenzen
+## Technical observations and limitations
 
-| Beobachtung | Umfang des Nachweises |
+| Observation | Evidence and scope |
 |---|---|
-| Direkte UART-Root-Shell ohne Login | Am beschriebenen Gerät mit Main Board v0.95 / Panel v0.71 bestätigt |
-| UART-Konsole | `console=ttyS0,115200n8` in der Kernel-Kommandozeile |
-| Betriebssystem | Linux 4.4.76, Kernel-Build vom 16. April 2025, `armv5tel` |
-| Root-Dateisystem | `/dev/mmcblk0p2`, SquashFS; im Bootlog schreibgeschützt eingehängt |
-| EWS-Passwort | Im untersuchten `/datafs/H1_nvram.bin` als lesbarer Klartextwert gefunden |
-| Passwortänderung | Über das EWS nach Anmeldung mit dem gespeicherten Wert durchgeführt |
+| Direct UART root shell without login | Confirmed on the described unit with Main Board v0.95 / Panel v0.71 |
+| UART console | `console=ttyS0,115200n8` in the kernel command line |
+| Operating system | Linux 4.4.76, kernel built on April 16, 2025, `armv5tel` |
+| Root filesystem | `/dev/mmcblk0p2`, SquashFS; mounted read-only in the boot log |
+| EWS password | Found as readable plaintext in the investigated `/datafs/H1_nvram.bin` |
+| Password change | Performed through EWS after logging in with the stored value |
 
-Der Zugriff über UART und die Klartextspeicherung bedeuten, dass das EWS-Passwort im getesteten Stand keine Schutzgrenze gegen jemanden mit physischem Zugriff auf die offene Platine bildet. Eine Änderung des Webpassworts schützt nicht automatisch diese UART-Shell.
+UART access and plaintext storage mean that, on the tested firmware, the EWS password does not provide a security boundary against someone with physical access to the exposed board. Changing the web password does not automatically protect this UART shell.
 
-Ich habe für die Wiederherstellung **keine Passwortfelder mit `dd` überschrieben, keine unbekannten NVRAM-Werkzeuge mit Schreiboptionen ausgeführt und keine modifizierte Firmware geflasht**. Solche Eingriffe sind hier nicht beschrieben: Ein falscher Offset oder eine beschädigte Konfigurationsstruktur könnte einen funktionierenden Scanner zusätzlich beschädigen.
+During recovery, I **did not overwrite password fields with `dd`, run unknown NVRAM tools with write options, or flash modified firmware**. Those operations are not covered here: an incorrect offset or a damaged configuration structure could cause additional damage to a working scanner.
 
-Nicht belegt sind das Verhalten aller anderen Firmwarestände, die Ursache des verlorenen Präfixes, die Funktion von Pin D sowie ein allgemeiner Reparaturweg für Scanner, die tatsächlich nicht mehr booten.
+The behaviour of all other firmware versions, the cause of the lost prefix, the function of pin D, and a general repair procedure for scanners that genuinely no longer boot have not been established.
 
-## Weitere Nutzerberichte und Quellen
+## Other user reports and sources
 
-Die eigenen Beobachtungen an v0.95 stehen neben früheren Nutzerberichten über Passwortprobleme. Die folgenden Berichte betreffen unterschiedliche Firmwarestände und teilweise unterschiedliche Passwortfelder:
+My observations under v0.95 sit alongside earlier user reports of EWS password problems. The following reports concern different or unspecified firmware versions:
 
-- **EWS-Passwort, Firmware 0.51, 7. April 2021:** [FFWFAF: ScanJet Pro N4000 snw1 password reset](https://h30434.www3.hp.com/t5/Scanning-Faxing-Copying/ScanJet-Pro-N4000-snw1-password-reset/td-p/8030034). Der Betroffene berichtet, dass ein langes Passwort auf die ersten 16 Zeichen gekürzt wurde und die Anmeldung mit dieser Variante gelang. Nach seiner Erinnerung gab es keine Warnung. Das belegt nicht dasselbe Kürzungsmuster wie mein Fall unter v0.95.
-- **EWS-Aussperrung, Firmware nicht genannt, 16. Oktober 2023:** [Cannot login to EWS scanner, only user guest](https://h30434.www3.hp.com/t5/Scanning-Faxing-Copying/Reset-password-Cannot-login-to-ews-scanner-only-user-guest/td-p/8890757). Ein weiterer N4000-Nutzer berichtet von verlorenem Admin-Zugang nach einer Passwortänderung. Der Beitrag belegt keine konkrete Kürzung und keine geklärte Ursache.
-- **SMTP-Passwort, Rezensionstitel nennt Firmware 0.6, 24. Februar 2021:** [HP-Produktrezension von „Sad Scanner Owner“](https://www.hp.com/us-en/shop/reviews/hp-scanjet-pro-n4000-snw1-sheet-feed-scanner-6fw08a-bgj). Der Käufer berichtet von stiller Kürzung des E-Mail-Passworts. Das ist ein separates Passwortfeld; Länge und Algorithmus werden nicht genannt.
+- **EWS password, firmware 0.51, April 7, 2021:** [FFWFAF: ScanJet Pro N4000 snw1 password reset](https://h30434.www3.hp.com/t5/Scanning-Faxing-Copying/ScanJet-Pro-N4000-snw1-password-reset/td-p/8030034). The affected user reports that a long password was truncated to its first 16 characters, and login with that version succeeded. They recall receiving no warning. This does not establish the same truncation pattern as my case under v0.95.
+- **EWS lockout, firmware not specified, October 16, 2023:** [Cannot login to EWS scanner, only user guest](https://h30434.www3.hp.com/t5/Scanning-Faxing-Copying/Reset-password-Cannot-login-to-ews-scanner-only-user-guest/td-p/8890757). Another N4000 user reports losing admin access after a password change. The post does not establish a specific truncation pattern or a confirmed cause.
 
-Diese Beiträge sind Erfahrungsberichte der jeweiligen Nutzer, keine Bestätigung des Fehlers durch HP. Die UART- und NVRAM-Befunde in dieser Anleitung stammen aus meiner eigenen Untersuchung und den dazugehörigen Notizen.
+These posts are firsthand accounts from their respective users, not confirmation of the issue by HP. The UART and NVRAM findings in this guide come from my own investigation and its accompanying notes.
 
-Weitere technische Quellen:
+Additional technical sources:
 
-- [HP-Benutzerhandbuch für N4000 snw1 und verwandte Modelle](https://h10032.www1.hp.com/ctg/Manual/c06556933.pdf): EWS-Zugang und Scanner-Einstellungen; es dokumentiert nicht den hier beschriebenen UART-Weg.
-- [DSD TECH SH-U09B](https://www.deshide.com/product-details_SH-U09B.html): Verwendeter CP2102-Adapter und Anschlussbezeichnungen.
-- [Silicon Labs CP2102/9-Datenblatt](https://www.silabs.com/documents/public/data-sheets/CP2102-9.pdf): UART-Signalpins und elektrische Eigenschaften.
+- [HP user guide for the N4000 snw1 and related models](https://h10032.www1.hp.com/ctg/Manual/c06556933.pdf): EWS access and scanner settings; it does not document the UART procedure described here.
+- [DSD TECH SH-U09B](https://www.deshide.com/product-details_SH-U09B.html): The CP2102 adapter used here and its pin labels.
+- [Silicon Labs CP2102/9 datasheet](https://www.silabs.com/documents/public/data-sheets/CP2102-9.pdf): UART signal pins and electrical characteristics.
 
-## English quick guide
+## Quick guide
 
 This repository documents recovery of the **EWS/web-admin password** on one HP ScanJet Pro N4000 snw1 running **main-board firmware v0.95**. A 31-character password was stored as a 16-character substring, losing both its prefix and suffix. This is an observed case, not a proven general truncation rule.
 
